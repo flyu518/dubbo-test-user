@@ -1,0 +1,24 @@
+# phpstorm project files
+.idea
+.vscode
+
+# netbeans project files
+nbproject
+
+# zend studio for eclipse project files
+.buildpath
+.project
+.settings
+
+# windows thumbnail cache
+Thumbs.db
+
+# Mac DS_Store Files
+.DS_Store
+
+# 构建文件忽略
+# 忽略特定名称的可执行文件（适用于 Linux/macOS）
+/server
+
+# 忽略 Windows 可执行文件
+/server.exe
