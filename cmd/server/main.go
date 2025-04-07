@@ -5,9 +5,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"user/api"
 	"user/internal/config"
 	"user/internal/service"
+
+	"github.com/flyu518/dubbo-test-sdk/user/api"
 
 	"dubbo.apache.org/dubbo-go/v3"
 	_ "dubbo.apache.org/dubbo-go/v3/imports" // 导入dubbo-go的依赖，必须的
@@ -17,11 +18,11 @@ import (
 // 启动应用
 func main() {
 	api.SetProviderUserService(new(service.UserService))
-	if err := dubbo.Load(); err != nil {
+	if err := dubbo.Load(dubbo.WithPath("./config/dubbogo.yaml")); err != nil {
 		panic(err)
 	}
 
-	config.InitConfig("config/config.yaml") // 地址待处理
+	config.InitConfig("./config/config.yaml") // 地址待处理
 
 	logger.Infof("用户服务已启动")
 

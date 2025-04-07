@@ -6,8 +6,6 @@ require (
 	dubbo.apache.org/dubbo-go/v3 v3.3.0
 	github.com/redis/go-redis/v9 v9.7.3
 	github.com/spf13/viper v1.7.0
-	google.golang.org/protobuf v1.36.6
-	gopkg.in/fsnotify.v1 v1.4.7
 	gorm.io/driver/mysql v1.5.7
 )
 
@@ -32,6 +30,7 @@ require (
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
 	github.com/envoyproxy/go-control-plane v0.11.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.10.0 // indirect
+	github.com/flyu518/dubbo-test-sdk/user v0.0.0-20250407184347-373540ee1a60 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-resty/resty/v2 v2.7.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
@@ -82,6 +81,7 @@ require (
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/grpc v1.52.0 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
 )
 

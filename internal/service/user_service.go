@@ -20,7 +20,7 @@ package service
 import (
 	"context"
 
-	"user/api"
+	"github.com/flyu518/dubbo-test-sdk/user/api"
 
 	"github.com/dubbogo/gost/log/logger"
 )

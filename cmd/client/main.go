@@ -3,29 +3,29 @@ package main
 import (
 	"context"
 
+	"dubbo.apache.org/dubbo-go/v3"
+	_ "dubbo.apache.org/dubbo-go/v3/imports" // 导入dubbo-go的依赖，必须的
 	"github.com/dubbogo/gost/log/logger"
+	"github.com/flyu518/dubbo-test-sdk/user/api"
 )
 
+var srv = new(api.UserServiceImpl)
+
 func main() {
-	// 创建客户端
-	client := NewClient("./config/dubbogo.yaml")
-
-	// 初始化
-	if err := client.Init(); err != nil {
-		logger.Errorf("初始化客户端失败: %v", err)
-		return
+	api.SetConsumerUserService(srv)
+	if err := dubbo.Load(dubbo.WithPath("./config/dubbogo.yaml")); err != nil {
+		panic(err)
 	}
 
-	// 确保资源释放
-	defer client.Close()
+	logger.Infof("用户服务已启动")
 
-	// 示例：获取用户信息
-	ctx := context.Background()
-	user, err := client.GetUser(ctx, "test_user")
+	res, err := srv.Register(context.Background(), &api.RegisterRequest{
+		Username: "test",
+		Password: "123456",
+	})
 	if err != nil {
-		logger.Errorf("获取用户失败: %v", err)
-		return
+		panic(err)
 	}
 
-	logger.Infof("用户信息: %v", user)
+	logger.Infof("注册结果: %v", res)
 }
