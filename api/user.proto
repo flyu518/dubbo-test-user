@@ -9,6 +9,12 @@ service UserService {
     rpc GetUser(GetUserRequest) returns (GetUserResponse) {}
 }
 
+message User {
+    string username = 1;
+    string email = 3;
+    string phone = 4;
+}
+
 message RegisterRequest {
     string username = 1;
     string password = 2;
@@ -34,11 +40,4 @@ message GetUserRequest {
 
 message GetUserResponse {
     User user = 1;
-}
-
-message User {
-    string username = 1;
-    string password = 2;
-    string email = 3;
-    string phone = 4;
 }

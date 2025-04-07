@@ -1,5 +1,6 @@
 
 GOPATH:=$(shell go env GOPATH)
+PWD:=$(shell pwd)
 
 .PHONY: init
 init:
@@ -22,6 +23,11 @@ update:
 .PHONY: tidy
 tidy:
 	@go mod tidy
+
+.PHONY: run
+run:
+	@export DUBBO_GO_CONFIG_PATH="$(PWD)/config/dubbogo.yaml"
+	@go run ./cmd/server/main.go
 
 .PHONY: build
 build:

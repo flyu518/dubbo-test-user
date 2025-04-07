@@ -1,0 +1,28 @@
+mysql:
+  host: "10.2.10.80"
+  port: "3306"
+  db-name: "dubbo_dev"
+  username: "snapshot"
+  password: "snapshot"
+  singular: true
+  config: "charset=utf8mb4&parseTime=True&loc=Local"
+  max-idle-conns: 10
+  max-open-conns: 100
+  log-mode: "error"
+  log-zap: true
+
+redis:
+  # 基础配置
+  mode: "single"  # 模式：single或cluster
+  password: ""
+  
+  # 单节点配置
+  single:
+    addr: "10.2.10.80:6379"
+    db: 0
+  
+  # 集群配置
+  cluster:
+    addrs:
+      - "10.2.10.80:6379"
+  
