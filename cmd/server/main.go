@@ -17,12 +17,14 @@ import (
 
 // 启动应用
 func main() {
+	root_path := os.Getenv("DUBBO_GO_ROOT_PATH")
+
 	api.SetProviderUserService(new(service.UserService))
-	if err := dubbo.Load(dubbo.WithPath("./config/dubbogo.yaml")); err != nil {
+	if err := dubbo.Load(); err != nil {
 		panic(err)
 	}
 
-	config.InitConfig("./config/config.yaml") // 地址待处理
+	config.InitConfig(root_path + "/config/config.yaml") // 地址待处理
 
 	logger.Infof("用户服务已启动")
 

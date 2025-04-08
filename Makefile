@@ -12,7 +12,6 @@ tidy:
 
 .PHONY: run
 run:
-	@export DUBBO_GO_CONFIG_PATH="$(PWD)user/config/dubbogo.yaml"
 	@go run ./cmd/server/main.go
 
 .PHONY: build

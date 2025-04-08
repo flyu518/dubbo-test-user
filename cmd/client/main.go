@@ -13,7 +13,7 @@ var srv = new(api.UserServiceImpl)
 
 func main() {
 	api.SetConsumerUserService(srv)
-	if err := dubbo.Load(dubbo.WithPath("./config/dubbogo.yaml")); err != nil {
+	if err := dubbo.Load(); err != nil {
 		panic(err)
 	}
 

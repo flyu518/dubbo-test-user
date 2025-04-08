@@ -27,7 +27,7 @@ dubbo:
     level: "info"
     appender: "file" 
     file:
-      name: "runtime/logs/dubbo.log"
+      name: "runtime/logs/dubbo.log" # 暂时不知道怎么取环境变量
       maxSize: 100 # 100MB
       maxBackups: 3 # 保留 3 个文件
       maxAge: 300 # 300天
