@@ -11,20 +11,12 @@ import (
 )
 
 func main() {
-	// 配置中心启动方式 ------------
-	nacosConfig := pkg.NacosConfig{
-		Address:  "127.0.0.1:8848",
-		Username: "",
-		Password: "",
-	}
-	centerConfig := pkg.CenterConfig{
-		Namespace: "dev",
-		Group:     "user",
-		DataID:    "client.yaml",
-	}
+	// 通过环境变量获取配置
+	nacosConfig := pkg.GetNacosConfig()
+	centerConfig := pkg.GetCenterConfig()
 
 	// 获取 dubbo 实例和客户端
-	instance := pkg.GetDubboInstance(pkg.GetConfigCenterOption(&nacosConfig, &centerConfig))
+	instance := pkg.GetDubboInstance(pkg.GetConfigCenterOption(nacosConfig, centerConfig))
 	client := pkg.GetClient(instance)
 
 	// 获取服务
@@ -32,13 +24,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	// 读取本地配置启动方式 ------------
-	// var srv = new(api.UserServiceImpl)
-	// api.SetConsumerUserService(srv)
-	// if err := dubbo.Load(); err != nil {
-	// 	panic(err)
-	// }
 
 	logger.Infof("用户客户端已启动")
 
