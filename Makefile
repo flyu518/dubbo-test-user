@@ -12,11 +12,11 @@ tidy:
 
 .PHONY: run
 run:
-	@go run ./cmd/server/main.go
+	@go run ./main.go
 
 .PHONY: build
 build:
-	@go build -o ./server ./cmd/server/main.go
+	@go build -o ./server ./main.go
 
 .PHONY: docker
 docker:
