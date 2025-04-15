@@ -34,4 +34,4 @@ dubbo:
   provider: # 服务提供者配置
     services:
       UserProvider:
-        interface: lingmou.simple.user.api.UserService # proto文件中定义的服务名称
+        interface: lingmou.simple.sdk.user.api.UserService # proto文件中定义的服务名称
