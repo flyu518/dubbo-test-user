@@ -4,10 +4,15 @@ import (
 	"context"
 	"user/internal/service"
 
+	"dubbo.apache.org/dubbo-go/v3"
 	"github.com/flyu518/dubbo-test-sdk/user/api"
 
 	"github.com/dubbogo/gost/log/logger"
 )
+
+func GetUserHandler(instance *dubbo.Instance) *UserHandler {
+	return &UserHandler{}
+}
 
 // UserHandler 实现用户服务
 type UserHandler struct {

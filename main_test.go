@@ -4,7 +4,9 @@ import (
 	"context"
 	"os"
 	"testing"
-	"user/pkg"
+	"user/internal/model"
+	"user/pkg/global"
+	"user/pkg/util"
 
 	"dubbo.apache.org/dubbo-go/v3"
 	"dubbo.apache.org/dubbo-go/v3/client"
@@ -18,9 +20,12 @@ var cli *client.Client
 var srv api.UserService
 
 func TestMain(m *testing.M) {
+	// 初始化全局变量
+	global.InitGlobal("./config/config.yaml")
+
 	// 获取 dubbo 实例和服务端
-	instance = pkg.GetDubboInstance(pkg.ParseEnvCenterConfig())
-	cli = pkg.GetClient(instance)
+	instance = util.GetDubboInstance(global.ConfigCenterConfig)
+	cli = util.GetDubboClient(instance)
 
 	// 获取服务
 	var err error
@@ -32,17 +37,31 @@ func TestMain(m *testing.M) {
 	// 调用 m.Run 执行测试
 	code := m.Run()
 
+	// 删除测试用户
+	global.DB.Where("username = ?", "单元测试生成").Delete(&model.User{})
+
 	os.Exit(code)
 }
 
 func TestUser(t *testing.T) {
-	t.Run("获取用户", func(t *testing.T) {
-		res, err := srv.GetUser(context.Background(), &api.GetUserRequest{
-			Username: "123456",
+	t.Run("注册", func(t *testing.T) {
+		res, err := srv.Register(context.Background(), &api.RegisterRequest{
+			Username: "单元测试生成",
+			Password: "123456",
 		})
 
 		assert.NoError(t, err)
 
-		assert.Equal(t, "123456", res.User.Username)
+		assert.Equal(t, true, res.Success)
+	})
+
+	t.Run("获取用户", func(t *testing.T) {
+		res, err := srv.GetUser(context.Background(), &api.GetUserRequest{
+			Username: "单元测试生成",
+		})
+
+		assert.NoError(t, err)
+
+		assert.Equal(t, "单元测试生成", res.User.Username)
 	})
 }
