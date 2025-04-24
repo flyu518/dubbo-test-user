@@ -12,8 +12,8 @@ dubbo:
   registries: # 注册中心
     nacos:
       protocol: nacos # 注册中心协议 nacos / apollo / zookeeper / etcd
-      address: 127.0.0.1:8848
-      namespace: "dev" # 命名空间
+      address: 118.25.146.1:31238
+      namespace: "cui_test" # 命名空间
       group: "lingmou" # 配置组
       username: "" # 用户名（没有为空）
       password: "" # 密码（没有为空）
@@ -21,13 +21,7 @@ dubbo:
       use-as-meta-report: true # 是否作为元数据上报（nacos配置供元数据上报使用，可以不用重复写）
   logger: # 日志配置
     level: "info"
-    appender: "file" 
-    file:
-      name: "runtime/logs/dubbo.log" # 暂时不知道怎么取环境变量
-      maxSize: 100 # 100MB
-      maxBackups: 3 # 保留 3 个文件
-      maxAge: 300 # 300天
-      compress: true # 压缩
+    appender: "console"
   otel:
     tracing:
       enable: true
@@ -41,6 +35,7 @@ dubbo:
       name: tri
       port: 20000
   provider: # 服务提供者配置
+    filter: "otelServerTrace,myCustomFilter,accesslog"
     services:
       UserProvider:
         interface: lingmou.simple.sdk.user.api.UserService # proto文件中定义的服务名称

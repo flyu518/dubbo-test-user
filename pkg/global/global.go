@@ -16,7 +16,8 @@ var (
 	DB     *gorm.DB
 	Redis  redis.UniversalClient
 
-	Log logger.Logger // 这个地方特殊，要使用和框架相同的配置，需要在 main 中初始化
+	//Log logger.Logger // 这个地方特殊，要使用和框架相同的配置，需要在 main 中初始化
+	Log func() logger.Logger // 这个变量的初始化方法放到 logger/logger.go 中
 )
 
 func InitGlobal(configPath string) {

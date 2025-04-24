@@ -3,14 +3,14 @@ package handler
 import (
 	"context"
 	"user/internal/service"
+	"user/pkg/global"
 
-	"dubbo.apache.org/dubbo-go/v3"
 	"github.com/flyu518/dubbo-test-sdk/user/api"
 
 	"github.com/dubbogo/gost/log/logger"
 )
 
-func GetUserHandler(instance *dubbo.Instance) *UserHandler {
+func GetUserHandler() *UserHandler {
 	return &UserHandler{}
 }
 
@@ -20,8 +20,9 @@ type UserHandler struct {
 
 // Register 实现用户注册服务
 func (u *UserHandler) Register(ctx context.Context, req *api.RegisterRequest) (*api.RegisterResponse, error) {
-
+	//
 	logger.Infof("收到注册请求: %v", req.Username)
+	global.Log().Infof("收到注册请求222: %v", req.Username)
 
 	return service.UserService.Register(req)
 }

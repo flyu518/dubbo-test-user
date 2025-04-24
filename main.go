@@ -1,13 +1,17 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"user/internal/handler"
-	"user/pkg/global"
-	"user/pkg/util"
 
-	"github.com/dubbogo/gost/log/logger"
+	"user/pkg/global"
+
 	"github.com/flyu518/dubbo-test-sdk/user/api"
 
+	"dubbo.apache.org/dubbo-go/v3"
 	_ "dubbo.apache.org/dubbo-go/v3/imports" // 导入dubbo-go的依赖，必须的
 )
 
@@ -16,21 +20,39 @@ func main() {
 	// 初始化全局变量
 	global.InitGlobal("./config/config.yaml") // 考虑设置个绝对地址
 
-	// 获取 dubbo 实例和服务端
-	instance := util.GetDubboInstance(global.ConfigCenterConfig)
-	srv := util.GetDubboServer(instance)
+	// // // 获取 dubbo 实例和服务端
+	// instance := util.GetDubboInstance(global.ConfigCenterConfig)
+	// srv := util.GetDubboServer(instance)
 
-	// 注册服务
-	if err := api.RegisterUserServiceHandler(srv, handler.GetUserHandler(instance)); err != nil {
+	// // 注册服务
+	// if err := api.RegisterUserServiceHandler(srv, handler.GetUserHandler(instance)); err != nil {
+	// 	panic(err)
+	// }
+
+	// global.Log = logger.GetLogger() // 实例化之后设置，不要在实例化之前设置
+
+	// global.Log.Info("用户服务已启动")
+
+	// // 启动服务
+	// if err := srv.Serve(); err != nil {
+	// 	global.Log.Error(err)
+	// }
+
+	api.SetProviderUserService(handler.GetUserHandler())
+	if err := dubbo.Load(dubbo.WithPath("./config/server.yaml")); err != nil {
 		panic(err)
 	}
 
-	global.Log = logger.GetLogger() // 实例化之后设置，不要在实例化之前设置
+	//global.Log = logger.GetLogger() // 实例化之后设置，不要在实例化之前设置
+	global.Log().Info("用户服务已启动")
 
-	global.Log.Info("用户服务已启动")
+	waitForShutdown()
+}
 
-	// 启动服务
-	if err := srv.Serve(); err != nil {
-		global.Log.Error(err)
-	}
+// 优雅退出处理
+func waitForShutdown() {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-quit
+	fmt.Printf("收到信号: %s, 退出应用", sig)
 }
