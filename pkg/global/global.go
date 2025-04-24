@@ -1,9 +1,10 @@
 package global
 
 import (
-	"user/internal/util"
 	"user/pkg/config"
+	_ "user/pkg/imports" // 导入自定义依赖
 
+	_ "dubbo.apache.org/dubbo-go/v3/imports" // 导入dubbo-go的依赖，必须的
 	"github.com/dubbogo/gost/log/logger"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -16,8 +17,7 @@ var (
 	DB     *gorm.DB
 	Redis  redis.UniversalClient
 
-	//Log logger.Logger // 这个地方特殊，要使用和框架相同的配置，需要在 main 中初始化
-	Log func() logger.Logger // 这个变量的初始化方法放到 logger/logger.go 中
+	Log func() logger.Logger
 )
 
 func InitGlobal(configPath string) {
@@ -36,15 +36,12 @@ func InitGlobal(configPath string) {
 		panic(err)
 	}
 
-	// 临时操作（正式环境不要这样）
-	if Config.System.Env != config.EnvProd {
-		if err := util.MigrateTables(DB); err != nil {
-			panic(err)
-		}
-	}
-
 	Redis, err = config.GetRedis(&Config.Redis)
 	if err != nil {
 		panic(err)
+	}
+
+	Log = func() logger.Logger {
+		return logger.GetLogger()
 	}
 }

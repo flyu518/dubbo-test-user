@@ -1,4 +1,4 @@
-package global
+package imports
 
 import (
 	_ "user/pkg/filter"

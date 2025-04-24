@@ -6,19 +6,18 @@ import (
 	"os/signal"
 	"syscall"
 	"user/internal/handler"
-
+	"user/internal/initialize"
 	"user/pkg/global"
 
-	"github.com/flyu518/dubbo-test-sdk/user/api"
-
 	"dubbo.apache.org/dubbo-go/v3"
-	_ "dubbo.apache.org/dubbo-go/v3/imports" // 导入dubbo-go的依赖，必须的
+	"github.com/flyu518/dubbo-test-sdk/user/api"
 )
 
 // 启动应用
 func main() {
 	// 初始化全局变量
 	global.InitGlobal("./config/config.yaml") // 考虑设置个绝对地址
+	initialize.Init()
 
 	// // // 获取 dubbo 实例和服务端
 	// instance := util.GetDubboInstance(global.ConfigCenterConfig)
