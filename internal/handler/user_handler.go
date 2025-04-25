@@ -20,9 +20,10 @@ type UserHandler struct {
 
 // Register 实现用户注册服务
 func (u *UserHandler) Register(ctx context.Context, req *api.RegisterRequest) (*api.RegisterResponse, error) {
-	//
+	// 日志使用方式示例
 	logger.Infof("收到注册请求: %v", req.Username)
 	global.Log().Infof("收到注册请求222: %v", req.Username)
+	global.Log().Warnf("收到注册请求333: %v", req.Username)
 
 	return service.UserService.Register(req)
 }

@@ -17,6 +17,7 @@ type Config struct {
 	System SystemConfig `mapstructure:"system" yaml:"system" json:"system"`
 	MySQL  MysqlConfig  `mapstructure:"mysql" yaml:"mysql" json:"mysql"`
 	Redis  RedisConfig  `mapstructure:"redis" yaml:"redis" json:"redis"`
+	Logger LoggerConfig `mapstructure:"logger" yaml:"logger" json:"logger"`
 }
 
 // GetConfig 获取配置

@@ -25,3 +25,7 @@ Thumbs.db
 
 # 忽略 dubbo 元数据文件
 /dubbo.metadata.*
+
+# 忽略 export.sh
+export.sh
+

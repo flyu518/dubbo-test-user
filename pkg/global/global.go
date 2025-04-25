@@ -16,8 +16,7 @@ var (
 	Config *config.Config
 	DB     *gorm.DB
 	Redis  redis.UniversalClient
-
-	Log func() logger.Logger
+	Log    func() logger.Logger
 )
 
 func InitGlobal(configPath string) {
@@ -41,7 +40,8 @@ func InitGlobal(configPath string) {
 		panic(err)
 	}
 
-	Log = func() logger.Logger {
-		return logger.GetLogger()
+	Log, err = config.GetLogger(&Config.Logger)
+	if err != nil {
+		panic(err)
 	}
 }
