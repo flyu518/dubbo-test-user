@@ -1,57 +1,38 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 	"user/internal/handler"
-	"user/internal/initialize"
+	internalInitialize "user/internal/initialize"
 	"user/pkg/global"
+	"user/pkg/initialize"
+	"user/pkg/util"
 
-	"dubbo.apache.org/dubbo-go/v3"
+	"dubbo.apache.org/dubbo-go/v3/server"
 	"github.com/flyu518/dubbo-test-sdk/user/api"
 )
 
 // 启动应用
 func main() {
 	// 初始化全局变量
-	global.InitGlobal("./config/config.yaml") // 考虑设置个绝对地址
 	initialize.Init()
 
-	// // // 获取 dubbo 实例和服务端
-	// instance := util.GetDubboInstance(global.ConfigCenterConfig)
-	// srv := util.GetDubboServer(instance)
+	// 初始化私有数据
+	internalInitialize.Init()
 
-	// // 注册服务
-	// if err := api.RegisterUserServiceHandler(srv, handler.GetUserHandler(instance)); err != nil {
-	// 	panic(err)
-	// }
+	// 获取 dubbo 实例和服务端
+	instance := util.GetDubboInstance(global.ConfigCenterConfig)
+	srv := util.GetDubboServer(instance)
 
-	// global.Log = logger.GetLogger() // 实例化之后设置，不要在实例化之前设置
-
-	// global.Log.Info("用户服务已启动")
-
-	// // 启动服务
-	// if err := srv.Serve(); err != nil {
-	// 	global.Log.Error(err)
-	// }
-
-	api.SetProviderUserService(handler.GetUserHandler())
-	if err := dubbo.Load(dubbo.WithPath("./config/server.yaml")); err != nil {
+	// 注册服务，这种方式启动的，filter 只能这样写，不能在 yaml 中配置
+	err := api.RegisterUserServiceHandler(srv, handler.GetUserHandler(instance), server.WithFilter("otelServerTrace,logTraceFilter"))
+	if err != nil {
 		panic(err)
 	}
 
-	//global.Log = logger.GetLogger() // 实例化之后设置，不要在实例化之前设置
 	global.Log().Info("用户服务已启动")
 
-	waitForShutdown()
-}
-
-// 优雅退出处理
-func waitForShutdown() {
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	sig := <-quit
-	fmt.Printf("收到信号: %s, 退出应用", sig)
+	// 启动服务
+	if err := srv.Serve(); err != nil {
+		global.Log().Error(err)
+	}
 }

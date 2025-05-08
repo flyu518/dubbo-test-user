@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func InitDatabase() {
+func InitMigrate() {
 	// 临时操作（正式环境不要这样）
 	if global.Config.System.Env != config.EnvProd {
 		if err := MigrateTables(global.DB); err != nil {

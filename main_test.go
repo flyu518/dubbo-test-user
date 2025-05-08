@@ -6,6 +6,7 @@ import (
 	"testing"
 	"user/internal/model"
 	"user/pkg/global"
+	"user/pkg/initialize"
 	"user/pkg/util"
 
 	"dubbo.apache.org/dubbo-go/v3"
@@ -21,7 +22,7 @@ var srv api.UserService
 
 func TestMain(m *testing.M) {
 	// 初始化全局变量
-	global.InitGlobal("./config/config.yaml")
+	initialize.Init()
 
 	// 获取 dubbo 实例和服务端
 	instance = util.GetDubboInstance(global.ConfigCenterConfig)

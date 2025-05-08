@@ -1,7 +1,8 @@
 package config
 
 type SystemConfig struct {
-	Env Env `mapstructure:"env" yaml:"env" json:"env"`
+	ServiceName string `mapstructure:"service-name" yaml:"service-name" json:"service-name"`
+	Env         Env    `mapstructure:"env" yaml:"env" json:"env"`
 }
 
 type Env string

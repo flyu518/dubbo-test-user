@@ -1,157 +1,193 @@
+/**
+ * 直接复制的 github.com/dubbogo/gost/log/logger，做了很多修改
+ */
+
 package logger
 
 import (
-	"context"
-	"time"
+	"github.com/natefinch/lumberjack"
 
-	"github.com/dubbogo/gost/log/logger"
-	"go.opentelemetry.io/otel/trace"
+	gostLogger "github.com/dubbogo/gost/log/logger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-var (
-	baseLogger *zap.Logger
-	logConfig  zap.Config
-	callerSkip int = 1
-)
-
-type Logger struct {
-	baseLogger *zap.Logger
-}
+var dubboLogger *DubboLogger
 
 func init() {
-	// 创建自定义的生产环境配置
-	logConfig = zap.NewProductionConfig()
-
-	// 自定义时间格式编码器，这里使用的是 ISO8601 格式
-	// 你可以替换为其他格式，例如 RFC3339 或自定义格式
-	logConfig.EncoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString(t.Format("2006-01-02 15:04:05.000"))
-	}
-
-	// 使用自定义配置创建日志记录器并设置CallerSkip
-	l, err := logConfig.Build(zap.AddCallerSkip(callerSkip))
-	if err != nil {
-		panic(err)
-	}
-	baseLogger = l
-	logger.SetLogger(&Logger{baseLogger: l})
+	InitLogger(nil)
 }
 
-func GetLogger() *Logger {
-	return &Logger{baseLogger: baseLogger}
+// nolint
+type DubboLogger struct {
+	gostLogger.Logger
+	dynamicLevel zap.AtomicLevel
+	ZapLogger    *zap.Logger
 }
 
-// SetCallerSkip 设置日志调用者跳过层级
-// 用于控制日志输出中显示的代码位置
-// 值越大，跳过的调用栈层级越多
-func SetCallerSkip(skip int) {
-	if skip < 0 {
-		skip = 0
-	}
-
-	// 保存新的callerSkip值
-	callerSkip = skip
-
-	// 重新构建日志记录器，使用AddCallerSkip选项
-	newLogger, err := logConfig.Build(zap.AddCallerSkip(callerSkip))
-	if err != nil {
-		baseLogger.Error("无法更新CallerSkip设置", zap.Error(err))
-		return
-	}
-
-	// 替换全局日志记录器
-	_ = baseLogger.Sync()
-	baseLogger = newLogger
-	logger.SetLogger(&Logger{baseLogger: newLogger})
+type Config struct {
+	LumberjackConfig *lumberjack.Logger `yaml:"lumberjack-config"`
+	ZapConfig        *zap.Config        `yaml:"zap-config"`
+	CallerSkip       int
 }
 
-// GetCallerSkip 获取当前的CallerSkip设置
-func GetCallerSkip() int {
-	return callerSkip
+// InitLogger use for init logger by @conf
+func InitLogger(conf *Config) {
+	var (
+		zapLogger *zap.Logger
+		config    = &Config{}
+	)
+	if conf == nil || conf.ZapConfig == nil {
+		zapLoggerEncoderConfig := GetZapEncoderConfigDefault()
+		config.ZapConfig = GetZapConfigDefault(zapLoggerEncoderConfig)
+	} else {
+		config.ZapConfig = conf.ZapConfig
+	}
+
+	if conf != nil {
+		config.CallerSkip = conf.CallerSkip
+	}
+
+	if config.CallerSkip == 0 {
+		config.CallerSkip = 1
+	}
+
+	if conf == nil || conf.LumberjackConfig == nil {
+		zapLogger, _ = config.ZapConfig.Build(zap.AddCaller(), zap.AddCallerSkip(config.CallerSkip))
+	} else {
+		config.LumberjackConfig = conf.LumberjackConfig
+		zapLogger = initZapLoggerWithSyncer(config)
+	}
+
+	dubboLogger = &DubboLogger{Logger: zapLogger.Sugar(), dynamicLevel: config.ZapConfig.Level, ZapLogger: zapLogger}
+
+	SetGlobalLogger(dubboLogger)
 }
 
-// SetLoggerLevel 设置日志级别
-// level 可以是以下值之一："debug", "info", "warn", "error", "dpanic", "panic", "fatal"
-func SetLoggerLevel(level string) error {
-	var zapLevel zapcore.Level
-	if err := zapLevel.UnmarshalText([]byte(level)); err != nil {
-		return err
+func GetZapConfigDefault(encoderConfig zapcore.EncoderConfig) *zap.Config {
+	return &zap.Config{
+		Level:            zap.NewAtomicLevelAt(zap.InfoLevel),
+		Development:      false,
+		Encoding:         "json",
+		EncoderConfig:    encoderConfig,
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
 	}
+}
 
-	// 更新配置中的日志级别
-	logConfig.Level.SetLevel(zapLevel)
-
-	// 使用更新后的配置创建新的日志记录器，保持CallerSkip设置
-	newLogger, err := logConfig.Build(zap.AddCallerSkip(callerSkip))
-	if err != nil {
-		return err
+func GetZapEncoderConfigDefault() zapcore.EncoderConfig {
+	return zapcore.EncoderConfig{
+		TimeKey:        "time",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "line",
+		MessageKey:     "msg",
+		StacktraceKey:  "stacktrace",
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
+		EncodeTime:     zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000"),
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
+}
 
-	// 替换全局日志记录器
-	// 确保先关闭旧的日志记录器，以释放资源
-	_ = baseLogger.Sync()
-	baseLogger = newLogger
-	logger.SetLogger(&Logger{baseLogger: newLogger})
+// SetGlobalLogger 设置框架全局 logger
+func SetGlobalLogger(dubboLogger *DubboLogger) {
+	gostLogger.SetLogger(dubboLogger)
+}
 
+func GetDubboLogger() *DubboLogger {
+	return dubboLogger
+}
+
+func GetLogger() gostLogger.Logger {
+	return dubboLogger
+}
+
+// SetLoggerLevel use for set logger level
+func SetLoggerLevel(level string) bool {
+	if l, ok := dubboLogger.Logger.(OpsLogger); ok {
+		l.SetLoggerLevel(level)
+		return true
+	}
+	return false
+}
+
+// OpsLogger use for the SetLoggerLevel
+type OpsLogger interface {
+	gostLogger.Logger
+	SetLoggerLevel(level string)
+}
+
+// SetLoggerLevel use for set logger level
+func (dl *DubboLogger) SetLoggerLevel(level string) {
+	l := new(zapcore.Level)
+	if err := l.Set(level); err == nil {
+		dl.dynamicLevel.SetLevel(*l)
+	}
+}
+
+// initZapLoggerWithSyncer init zap Logger with syncer
+func initZapLoggerWithSyncer(conf *Config) *zap.Logger {
+	core := zapcore.NewCore(
+		conf.getEncoder(),
+		conf.getLogWriter(),
+		zap.NewAtomicLevelAt(conf.ZapConfig.Level.Level()),
+	)
+
+	return zap.New(core, zap.AddCaller(), zap.AddCallerSkip(conf.CallerSkip))
+}
+
+// getEncoder get encoder by config, zapcore support json and console encoder
+func (c *Config) getEncoder() zapcore.Encoder {
+	if c.ZapConfig.Encoding == "json" {
+		return zapcore.NewJSONEncoder(c.ZapConfig.EncoderConfig)
+	} else if c.ZapConfig.Encoding == "console" {
+		return zapcore.NewConsoleEncoder(c.ZapConfig.EncoderConfig)
+	}
 	return nil
 }
 
-// GetLoggerLevel 获取日志级别
-func GetLoggerLevel() string {
-	return logConfig.Level.String()
+// getLogWriter get Lumberjack writer by LumberjackConfig
+func (c *Config) getLogWriter() zapcore.WriteSyncer {
+	return zapcore.AddSync(c.LumberjackConfig)
 }
 
-// InjectTraceToGlobal 将 traceId 注入到全局 logger 中
-func InjectTraceToGlobal(ctx context.Context) {
-	spanCtx := trace.SpanContextFromContext(ctx)
-	if !spanCtx.IsValid() {
-		return
-	}
-	loggerWithTrace := baseLogger.With(
-		zap.String("traceId", spanCtx.TraceID().String()),
-		zap.String("spanId", spanCtx.SpanID().String()),
-	)
-	logger.SetLogger(&Logger{baseLogger: loggerWithTrace})
+func (l *DubboLogger) Debug(args ...interface{}) {
+	l.Logger.Debug(args...)
 }
 
-func (l *Logger) Debug(args ...interface{}) {
-	l.baseLogger.Sugar().Debug(args...)
+func (l *DubboLogger) Info(args ...interface{}) {
+	l.Logger.Info(args...)
 }
 
-func (l *Logger) Info(args ...interface{}) {
-	l.baseLogger.Sugar().Info(args...)
+func (l *DubboLogger) Warn(args ...interface{}) {
+	l.Logger.Warn(args...)
 }
 
-func (l *Logger) Warn(args ...interface{}) {
-	l.baseLogger.Sugar().Warn(args...)
+func (l *DubboLogger) Error(args ...interface{}) {
+	l.Logger.Error(args...)
 }
 
-func (l *Logger) Error(args ...interface{}) {
-	l.baseLogger.Sugar().Error(args...)
+func (l *DubboLogger) Debugf(format string, args ...interface{}) {
+	l.Logger.Debugf(format, args...)
 }
 
-func (l *Logger) Debugf(format string, args ...interface{}) {
-	l.baseLogger.Sugar().Debugf(format, args...)
+func (l *DubboLogger) Infof(format string, args ...interface{}) {
+	l.Logger.Infof(format, args...)
 }
 
-func (l *Logger) Infof(format string, args ...interface{}) {
-	l.baseLogger.Sugar().Infof(format, args...)
+func (l *DubboLogger) Warnf(format string, args ...interface{}) {
+	l.Logger.Warnf(format, args...)
 }
 
-func (l *Logger) Warnf(format string, args ...interface{}) {
-	l.baseLogger.Sugar().Warnf(format, args...)
+func (l *DubboLogger) Errorf(format string, args ...interface{}) {
+	l.Logger.Errorf(format, args...)
 }
 
-func (l *Logger) Errorf(format string, args ...interface{}) {
-	l.baseLogger.Sugar().Errorf(format, args...)
+func (l *DubboLogger) Fatal(args ...interface{}) {
+	l.Logger.Fatal(args...)
 }
 
-func (l *Logger) Fatal(args ...interface{}) {
-	l.baseLogger.Sugar().Fatal(args...)
-}
-
-func (l *Logger) Fatalf(format string, args ...interface{}) {
-	l.baseLogger.Sugar().Fatalf(format, args...)
+func (l *DubboLogger) Fatalf(format string, args ...interface{}) {
+	l.Logger.Fatalf(format, args...)
 }
