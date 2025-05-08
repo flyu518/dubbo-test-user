@@ -29,10 +29,10 @@ func main() {
 		panic(err)
 	}
 
-	global.Log().Info("用户服务已启动")
+	global.Log.Info("用户服务已启动")
 
 	// 启动服务
 	if err := srv.Serve(); err != nil {
-		global.Log().Error(err)
+		global.Log.Error(err)
 	}
 }

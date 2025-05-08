@@ -23,8 +23,10 @@ type LogTraceFilter struct {
 }
 
 func (f *LogTraceFilter) Invoke(ctx context.Context, invoker protocol.Invoker, invocation protocol.Invocation) protocol.Result {
-	pkgLogger.InjectTrace(ctx)
-	return invoker.Invoke(ctx, invocation)
+	// 使用context-aware方式注入trace信息，获取增强的context
+	ctxWithLogger := pkgLogger.InjectTrace(ctx)
+	// 使用带有logger的context继续调用链
+	return invoker.Invoke(ctxWithLogger, invocation)
 }
 func (f *LogTraceFilter) OnResponse(ctx context.Context, result protocol.Result, invoker protocol.Invoker, protocol protocol.Invocation) protocol.Result {
 	return result

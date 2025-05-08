@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"time"
 	"user/internal/model"
 	"user/pkg/global"
 
@@ -58,28 +57,19 @@ func (u *userService) Login(req *api.LoginRequest) (*api.LoginResponse, error) {
 }
 
 // GetUser 实现获取用户信息服务
-func (u *userService) GetUser(req *api.GetUserRequest) (*api.GetUserResponse, error) {
-	// 仅仅为了做 redis 测试
-	global.Log().Info("开始缓存", req.Username)
-	global.Redis.Set(context.Background(), req.Username, "123456", 10*time.Second)
-	username, err := global.Redis.Get(context.Background(), req.Username).Result()
-	if err != nil {
-		global.Log().Error("获取缓存失败", err)
-		return nil, err
-	}
-	global.Log().Info("获取缓存", username)
+func (u *userService) GetUser(ctx context.Context, req *api.GetUserRequest) (*api.GetUserResponse, error) {
 
 	// 读取数据库
-	global.Log().Info("开始读取数据库", req.Username)
+	global.LogCtx(ctx).Info("开始读取数据库", req.Username)
 	user := model.User{}
 
 	if err := global.DB.Where("username = ?", req.Username).First(&user).Error; err != nil {
-		global.Log().Error("读取数据库失败", err)
+		global.LogCtx(ctx).Error("读取数据库失败", err)
 		return nil, err
 	}
 
 	userJson, _ := json.Marshal(user)
-	global.Log().Info("读取数据库成功", string(userJson))
+	global.LogCtx(ctx).Info("读取数据库成功", string(userJson))
 
 	return &api.GetUserResponse{
 		User: &api.User{

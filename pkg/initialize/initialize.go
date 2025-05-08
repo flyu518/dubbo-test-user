@@ -27,7 +27,7 @@ func Init() {
 		panic(err)
 	}
 
-	global.Log, err = InitLogger(global.Config)
+	global.Log, global.LogCtx, err = InitLogger(global.Config)
 	if err != nil {
 		panic(err)
 	}

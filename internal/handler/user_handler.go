@@ -20,7 +20,7 @@ type UserHandler struct{}
 // Register 实现用户注册服务
 func (u *UserHandler) Register(ctx context.Context, req *api.RegisterRequest) (*api.RegisterResponse, error) {
 	// 日志使用方式示例
-	global.Log().Infof("收到注册请求: %v", req.Username)
+	global.LogCtx(ctx).Infof("收到注册请求: %v", req.Username)
 
 	// 缓存使用方式示例
 	var username string
@@ -28,11 +28,11 @@ func (u *UserHandler) Register(ctx context.Context, req *api.RegisterRequest) (*
 		return &req.Username, nil
 	}, 100*time.Second)
 	if err != nil {
-		global.Log().Error("获取缓存失败", err)
+		global.LogCtx(ctx).Error("获取缓存失败", err)
 	} else if found {
-		global.Log().Infof("获取缓存成功: %v", username)
+		global.LogCtx(ctx).Infof("获取缓存成功: %v", username)
 	} else {
-		global.Log().Infof("获取缓存为空: %v", username)
+		global.LogCtx(ctx).Infof("获取缓存为空: %v", username)
 	}
 
 	// 缓存使用方式示例 - json
@@ -42,12 +42,22 @@ func (u *UserHandler) Register(ctx context.Context, req *api.RegisterRequest) (*
 		return req, nil
 	}, 100*time.Second)
 	if err != nil {
-		global.Log().Error("获取缓存失败-json：%v", err)
+		global.LogCtx(ctx).Error("获取缓存失败-json：%v", err)
 	} else if found {
-		global.Log().Infof("获取缓存成功-json： %v", req2)
+		global.LogCtx(ctx).Infof("获取缓存成功-json： %v", req2)
 	} else {
-		global.Log().Infof("获取缓存为空-json： %v", req2)
+		global.LogCtx(ctx).Infof("获取缓存为空-json： %v", req2)
 	}
+
+	// redis使用示例
+	global.LogCtx(ctx).Info("开始设置 redis", req.Username)
+	global.Redis.Set(ctx, req.Username, "123456", 10*time.Second)
+	username2, err := global.Redis.Get(ctx, req.Username).Result()
+	if err != nil {
+		global.LogCtx(ctx).Error("获取 redis 失败", err)
+		return nil, err
+	}
+	global.LogCtx(ctx).Info("获取 redis", username2)
 
 	return service.UserService.Register(req)
 }
@@ -55,7 +65,7 @@ func (u *UserHandler) Register(ctx context.Context, req *api.RegisterRequest) (*
 // Login 实现用户登录服务
 func (u *UserHandler) Login(ctx context.Context, req *api.LoginRequest) (*api.LoginResponse, error) {
 
-	global.Log().Infof("收到登录请求: %v", req.Username)
+	global.LogCtx(ctx).Infof("收到登录请求: %v", req.Username)
 
 	return service.UserService.Login(req)
 }
@@ -63,7 +73,7 @@ func (u *UserHandler) Login(ctx context.Context, req *api.LoginRequest) (*api.Lo
 // GetUser 实现获取用户信息服务
 func (u *UserHandler) GetUser(ctx context.Context, req *api.GetUserRequest) (*api.GetUserResponse, error) {
 
-	global.Log().Infof("收到获取用户信息请求: %v", req.Username)
+	global.LogCtx(ctx).Infof("收到获取用户信息请求: %v", req.Username)
 
-	return service.UserService.GetUser(req)
+	return service.UserService.GetUser(ctx, req)
 }

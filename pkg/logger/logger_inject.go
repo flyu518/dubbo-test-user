@@ -7,6 +7,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// contextKey 是用于存储context值的key类型
+type contextKey string
+
+// loggerContextKey 是存储logger的context key
+const loggerContextKey = contextKey("dubbo-logger")
+
 // InjectServiceName 注入服务名
 // 正常是在初始化的时候调用，可以修改本地和全局的 logger
 func InjectServiceName(name string) {
@@ -20,20 +26,42 @@ func InjectServiceName(name string) {
 }
 
 // InjectTrace 注入 traceId、spanId 等
-// 因为通过 context 动态设置，不要修改本地的 logger 的值，仅仅获取后设置到全局的 logger 里面
-func InjectTrace(ctx context.Context) {
+// 使用context-aware的方式处理trace信息，避免并发问题
+// 返回包含logger的新context
+func InjectTrace(ctx context.Context) context.Context {
 	spanCtx := trace.SpanContextFromContext(ctx)
 	if !spanCtx.IsValid() {
-		return
+		return ctx
 	}
 
-	dubboLogger := GetDubboLogger()
-	dubboLogger.ZapLogger = dubboLogger.ZapLogger.With(
-		zap.String("traceId", spanCtx.TraceID().String()),
-		zap.String("spanId", spanCtx.SpanID().String()),
-	)
+	// 获取原始logger
+	originalLogger := GetDubboLogger()
 
-	dubboLogger.Logger = dubboLogger.ZapLogger.Sugar()
+	// 创建一个新的logger，添加trace相关字段
+	traceLogger := &DubboLogger{
+		ZapLogger: originalLogger.ZapLogger.With(
+			zap.String("traceId", spanCtx.TraceID().String()),
+			zap.String("spanId", spanCtx.SpanID().String()),
+		),
+		dynamicLevel: originalLogger.dynamicLevel,
+	}
 
-	SetGlobalLogger(dubboLogger)
+	// 设置Sugar Logger
+	traceLogger.Logger = traceLogger.ZapLogger.Sugar()
+
+	// 将logger存储在context中
+	return context.WithValue(ctx, loggerContextKey, traceLogger)
+}
+
+// FromContext 从context中获取logger
+func FromContext(ctx context.Context) *DubboLogger {
+	if ctx == nil {
+		return GetDubboLogger()
+	}
+
+	if logger, ok := ctx.Value(loggerContextKey).(*DubboLogger); ok {
+		return logger
+	}
+
+	return GetDubboLogger()
 }

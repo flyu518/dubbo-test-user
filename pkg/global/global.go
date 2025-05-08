@@ -1,6 +1,7 @@
 package global
 
 import (
+	"context"
 	"user/pkg/config"
 	"user/pkg/types"
 
@@ -15,6 +16,7 @@ var (
 	Config *config.Config
 	DB     *gorm.DB
 	Redis  redis.UniversalClient
-	Log    func() logger.Logger
+	Log    logger.Logger
+	LogCtx func(ctx context.Context) logger.Logger
 	Cache  types.Cache
 )

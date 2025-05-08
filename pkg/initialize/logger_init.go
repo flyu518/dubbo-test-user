@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"context"
 	"user/pkg/config"
 	pkgLogger "user/pkg/logger"
 
@@ -8,9 +9,11 @@ import (
 )
 
 // InitLogger 初始化日志
-func InitLogger(config *config.Config) (func() logger.Logger, error) {
-	Log := func() logger.Logger {
-		return pkgLogger.GetLogger()
+func InitLogger(config *config.Config) (logger.Logger, func(ctx context.Context) logger.Logger, error) {
+	Log := pkgLogger.GetLogger()
+
+	LogCtx := func(ctx context.Context) logger.Logger {
+		return pkgLogger.FromContext(ctx)
 	}
 
 	// // 如果自定义配置比较多，并且没有单独的设置方法，可以先获取默认配置，然后修改后重新初始化
@@ -29,5 +32,5 @@ func InitLogger(config *config.Config) (func() logger.Logger, error) {
 	// 注入服务名
 	pkgLogger.InjectServiceName(config.System.ServiceName)
 
-	return Log, nil
+	return Log, LogCtx, nil
 }
